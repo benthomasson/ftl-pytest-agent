@@ -1,6 +1,9 @@
 [project]
 name = "ftl-agent"
 version = "0.1.0"
+dependencies = [
+    "smolagents",
+]
 
 [tool.setuptools]
 packages = ["ftl_agent"]
@@ -8,3 +11,8 @@ packages = ["ftl_agent"]
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[project.scripts]
+ftl-agent = "ftl_agent.cli:main"
+
+
