@@ -1,5 +1,5 @@
 from smolagents.tools import Tool
-from smolagents.local_python_executor import FinalAnswerException
+from ftl_agent.local_python_executor import FinalAnswerException
 from smolagents._function_type_hints_utils import (
     _parse_google_format_docstring,
     DocstringParsingException,
