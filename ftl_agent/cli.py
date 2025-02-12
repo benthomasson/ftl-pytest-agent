@@ -13,8 +13,9 @@ from .prompts import SOLVE_PROBLEM
 def main(tools, problem, system_design, model):
     """A agent that solves a problem given a system design and a set of tools"""
     model = create_model(model)
+    state = {'LOCKED': True}
     run_agent(
-        tools=[get_tool(t) for t in tools],
+        tools=[get_tool(state, t) for t in tools],
         model=model,
         problem_statement=SOLVE_PROBLEM.format(
             problem=problem, system_design=system_design

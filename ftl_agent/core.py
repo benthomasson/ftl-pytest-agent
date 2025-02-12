@@ -15,4 +15,7 @@ def run_agent(tools, model, problem_statement):
         model=model,
         verbosity_level=4,
     )
-    agent.run(problem_statement)
+    del agent.tools["final_answer"]
+    result = agent.run(problem_statement)
+    print(result)
+
