@@ -2,6 +2,9 @@ from smolagents.tools import Tool
 from ftl_agent.tools import get_json_schema
 from ftl_agent.local_python_executor import FinalAnswerException
 
+import faster_than_light as ftl
+import asyncio
+
 
 class Package(Tool):
     name = "package"
@@ -20,6 +23,12 @@ class Package(Tool):
         Returns:
             boolean
         """
+        output = asyncio.run(ftl.run_module(
+            self.state["inventory"],
+            self.state["modules"],
+            "argtest",
+            module_args=dict(somekey="somevalue"),
+        ))
 
         return True
 
@@ -92,7 +101,7 @@ class Check(Tool):
             boolean
         """
 
-        raise FinalAnswerException('Success!')
+        raise FinalAnswerException("Success!")
 
     description, inputs, output_type = get_json_schema(forward)
 

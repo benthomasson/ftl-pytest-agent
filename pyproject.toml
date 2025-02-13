@@ -3,6 +3,7 @@ name = "ftl-agent"
 version = "0.1.0"
 dependencies = [
     "smolagents",
+    "faster_than_light",
 ]
 
 [tool.setuptools]
