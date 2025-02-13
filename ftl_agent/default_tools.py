@@ -101,7 +101,27 @@ class Check(Tool):
             boolean
         """
 
-        raise FinalAnswerException("Success!")
+        return True
+
+    description, inputs, output_type = get_json_schema(forward)
+
+
+class Complete(Tool):
+    name = "complete"
+
+    def __init__(self, state, *args, **kwargs):
+        self.state = state
+        super().__init__(*args, **kwargs)
+
+    def forward(self, message:str):
+        """
+        Mark the solution as complete.
+
+        Args:
+            message: A completion message
+        """
+
+        raise FinalAnswerException(message)
 
     description, inputs, output_type = get_json_schema(forward)
 
@@ -111,6 +131,7 @@ TOOLS = {
     "copy": Copy,
     "service": Service,
     "check": Check,
+    "complete": Complete,
 }
 
 

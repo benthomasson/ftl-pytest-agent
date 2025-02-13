@@ -167,12 +167,13 @@ def get_json_schema(func: Callable) -> Dict:
     main_doc, param_descriptions, return_doc = _parse_google_format_docstring(doc)
 
     json_schema = _convert_type_hints_to_json_schema(func)
-    return_dict = {}
     if (return_dict := json_schema["properties"].pop("return", None)) is not None:
         if (
             return_doc is not None
         ):  # We allow a missing return docstring since most templates ignore it
             return_dict["description"] = return_doc
+    else:
+        return_dict = {}
     for arg, schema in json_schema["properties"].items():
         if "arg" == "self":
             continue
@@ -187,4 +188,4 @@ def get_json_schema(func: Callable) -> Dict:
             desc = enum_choices.string[: enum_choices.start()].strip()
         schema["description"] = desc
 
-    return main_doc, json_schema["properties"], return_dict.get("description", "")
+    return main_doc, json_schema["properties"], return_dict.get("description", "") or "null"
