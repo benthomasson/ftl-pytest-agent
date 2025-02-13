@@ -1,7 +1,7 @@
 import click
 
 from .core import create_model, run_agent
-from .tools import get_tool
+from .default_tools import get_tool
 from .prompts import SOLVE_PROBLEM
 
 
