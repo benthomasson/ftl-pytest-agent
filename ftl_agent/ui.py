@@ -1,7 +1,8 @@
 import click
 
 from .core import create_model, run_agent
-from .default_tools import get_tool
+from .default_tools import TOOLS
+from .tools import get_tool
 from .prompts import SOLVE_PROBLEM
 import faster_than_light as ftl
 import gradio as gr
@@ -19,6 +20,8 @@ import io
 @click.option("--extra-vars", "-e", multiple=True)
 def main(tools, problem, system_design, model, inventory, extra_vars):
     """A agent that solves a problem given a system design and a set of tools"""
+    tool_classes = {}
+    tool_classes.update(TOOLS)
     model = create_model(model)
     state = {
         "LOCKED": True,
@@ -38,7 +41,7 @@ def main(tools, problem, system_design, model, inventory, extra_vars):
         f = io.StringIO()
         with redirect_stdout(f):
             output = run_agent(
-                tools=[get_tool(state, t) for t in tools],
+                tools=[get_tool(tool_classes, t, state) for t in tools],
                 model=model,
                 problem_statement=SOLVE_PROBLEM.format(
                     problem=problem, system_design=system_design

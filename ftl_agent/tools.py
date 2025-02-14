@@ -1,5 +1,4 @@
 from smolagents.tools import Tool
-from ftl_agent.local_python_executor import FinalAnswerException
 from smolagents._function_type_hints_utils import (
     _parse_google_format_docstring,
     DocstringParsingException,
@@ -9,6 +8,7 @@ from smolagents._function_type_hints_utils import (
 )
 from typing import Callable, Dict
 import inspect
+import importlib
 
 import re
 import json
@@ -188,4 +188,30 @@ def get_json_schema(func: Callable) -> Dict:
             desc = enum_choices.string[: enum_choices.start()].strip()
         schema["description"] = desc
 
-    return main_doc, json_schema["properties"], return_dict.get("description", "") or "null"
+    return (
+        main_doc,
+        json_schema["properties"],
+        return_dict.get("description", "") or "null",
+    )
+
+
+def load_tools(tools_file):
+
+    # Load module from file path
+    spec = importlib.util.spec_from_file_location("tools", tools_file)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    tool_classes = {}
+
+    # Find and instantiate the Tool class
+    for item_name in dir(module):
+        item = getattr(module, item_name)
+        if isinstance(item, type) and issubclass(item, Tool) and item != Tool:
+            tool_classes[item.name] = item
+
+    return tool_classes
+
+
+def get_tool(tools, name, *args, **kwargs):
+    return tools[name](*args, **kwargs)
