@@ -5,6 +5,8 @@ from .default_tools import TOOLS
 from .tools import get_tool, load_tools
 from .prompts import SOLVE_PROBLEM
 import faster_than_light as ftl
+from smolagents.memory import ActionStep
+from smolagents.agent_types import AgentText
 
 
 @click.command()
@@ -15,7 +17,8 @@ import faster_than_light as ftl
 @click.option("--model", "-m", default="ollama_chat/deepseek-r1:14b")
 @click.option("--inventory", "-i", default="inventory.yml")
 @click.option("--extra-vars", "-e", multiple=True)
-def main(tools, tools_files, problem, system_design, model, inventory, extra_vars):
+@click.option("--output", "-o", default="output.py")
+def main(tools, tools_files, problem, system_design, model, inventory, extra_vars, output):
     """A agent that solves a problem given a system design and a set of tools"""
     tool_classes = {}
     tool_classes.update(TOOLS)
@@ -30,14 +33,24 @@ def main(tools, tools_files, problem, system_design, model, inventory, extra_var
     for extra_var in extra_vars:
         name, _, value = extra_var.partition("=")
         state[name] = value
-    for _ in run_agent(
+
+    with open(output, "w") as f:
+        f.write("#/usr/bin/env python3\n")
+    for o in run_agent(
         tools=[get_tool(tool_classes, t, state) for t in tools],
         model=model,
         problem_statement=SOLVE_PROBLEM.format(
             problem=problem, system_design=system_design
         ),
     ):
-        pass
+        if isinstance(o, ActionStep):
+            print(o.tool_calls)
+            for call in o.tool_calls:
+                with open(output, "a") as f:
+                    f.write(call.arguments)
+                    f.write("\n")
+        elif isinstance(o, AgentText):
+            print(o.to_string())
 
 
 if __name__ == "__main__":
