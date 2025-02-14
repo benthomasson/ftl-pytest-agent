@@ -18,8 +18,6 @@ def run_agent(tools, model, problem_statement):
         verbosity_level=4,
         system_prompt=CODE_SYSTEM_PROMPT,
     )
-    result = agent.run(problem_statement)
-    print(result)
-    return result
+    return agent.run(problem_statement, stream=True)
 
 

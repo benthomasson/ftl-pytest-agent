@@ -30,13 +30,14 @@ def main(tools, tools_files, problem, system_design, model, inventory, extra_var
     for extra_var in extra_vars:
         name, _, value = extra_var.partition("=")
         state[name] = value
-    run_agent(
+    for _ in run_agent(
         tools=[get_tool(tool_classes, t, state) for t in tools],
         model=model,
         problem_statement=SOLVE_PROBLEM.format(
             problem=problem, system_design=system_design
         ),
-    )
+    ):
+        pass
 
 
 if __name__ == "__main__":
