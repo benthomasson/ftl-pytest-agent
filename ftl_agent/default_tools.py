@@ -23,12 +23,14 @@ class Package(Tool):
         Returns:
             boolean
         """
-        output = asyncio.run(ftl.run_module(
-            self.state["inventory"],
-            self.state["modules"],
-            "argtest",
-            module_args=dict(somekey="somevalue"),
-        ))
+        output = asyncio.run(
+            ftl.run_module(
+                self.state["inventory"],
+                self.state["modules"],
+                "argtest",
+                module_args=dict(somekey="somevalue"),
+            )
+        )
 
         return True
 
@@ -113,7 +115,7 @@ class Complete(Tool):
         self.state = state
         super().__init__(*args, **kwargs)
 
-    def forward(self, message:str):
+    def forward(self, message: str):
         """
         Mark the solution as complete.
 
@@ -126,12 +128,78 @@ class Complete(Tool):
     description, inputs, output_type = get_json_schema(forward)
 
 
+class Slack(Tool):
+    name = "slack"
+
+    def __init__(self, state, *args, **kwargs):
+        self.state = state
+        super().__init__(*args, **kwargs)
+
+    def forward(self, message: str) -> bool:
+        """Sends a message to slack.
+
+        Args:
+            message: the message to send
+
+        Returns:
+            boolean
+        """
+        output = asyncio.run(
+            ftl.run_module(
+                self.state["inventory"],
+                self.state["modules"],
+                "slack",
+                module_args=dict(msg=message, token=self.state["slack_token"]),
+            )
+        )
+
+        return True
+
+    description, inputs, output_type = get_json_schema(forward)
+
+
+class Discord(Tool):
+    name = "discord"
+
+    def __init__(self, state, *args, **kwargs):
+        self.state = state
+        super().__init__(*args, **kwargs)
+
+    def forward(self, message: str) -> bool:
+        """Sends a message to discord.
+
+        Args:
+            message: the message to send
+
+        Returns:
+            boolean
+        """
+        output = asyncio.run(
+            ftl.run_module(
+                self.state["inventory"],
+                self.state["modules"],
+                "discord",
+                module_args=dict(
+                    content=message,
+                    webhook_token=self.state["discord_token"],
+                    webhook_id=self.state["discord_channel"],
+                ),
+            )
+        )
+
+        return True
+
+    description, inputs, output_type = get_json_schema(forward)
+
+
 TOOLS = {
     "package": Package,
     "copy": Copy,
     "service": Service,
     "check": Check,
     "complete": Complete,
+    "slack": Slack,
+    "discord": Discord,
 }
 
 

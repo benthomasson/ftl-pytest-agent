@@ -4,6 +4,7 @@ version = "0.1.0"
 dependencies = [
     "smolagents",
     "faster_than_light",
+    "gradio",
 ]
 
 [tool.setuptools]
@@ -15,5 +16,6 @@ build-backend = "setuptools.build_meta"
 
 [project.scripts]
 ftl-agent = "ftl_agent.cli:main"
+ftl-agent-ui = "ftl_agent.ui:main"
 
 

@@ -20,4 +20,6 @@ def run_agent(tools, model, problem_statement):
     )
     result = agent.run(problem_statement)
     print(result)
+    return result
+
 
