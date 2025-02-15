@@ -48,9 +48,9 @@ def main(
         ),
     ):
         if isinstance(o, ActionStep):
-            print(o.tool_calls)
-            for call in o.tool_calls:
-                generate_tool_call(output, call)
+            if o.tool_calls:
+                for call in o.tool_calls:
+                    generate_tool_call(output, call)
         elif isinstance(o, AgentText):
             print(o.to_string())
 
