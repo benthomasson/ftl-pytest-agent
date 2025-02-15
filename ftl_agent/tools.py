@@ -214,4 +214,7 @@ def load_tools(tools_file):
 
 
 def get_tool(tools, name, *args, **kwargs):
-    return tools[name](*args, **kwargs)
+    if name in tools:
+        return tools[name](*args, **kwargs)
+    else:
+        raise Exception(f"Tool not found: {name} not in {', '.join(tools.keys())}")

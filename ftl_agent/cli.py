@@ -38,7 +38,7 @@ def main(
         name, _, value = extra_var.partition("=")
         state[name] = value
 
-    generate_header(output, tools_files, tools, inventory, modules, extra_vars)
+    generate_header(output, system_design, problem, tools_files, tools, inventory, modules, extra_vars)
 
     for o in run_agent(
         tools=[get_tool(tool_classes, t, state) for t in tools],

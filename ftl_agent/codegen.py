@@ -1,10 +1,11 @@
 import os
 
 
-def generate_header(output, tools_files, tools, inventory, modules, extra_vars):
+def generate_header(output, system_design, problem, tools_files, tools, inventory, modules, extra_vars):
 
     with open(output, "w") as f:
-        f.write("#/usr/bin/env python3\n")
+        f.write("#!/usr/bin/env python3\n")
+        f.write(f'"""\nSystem Design: {system_design}\nProblem:{problem}\n"""\n')
         f.write("import ftl_agent\n")
         f.write("import os\n\n\n")
         f.write("with ftl_agent.automation(\n")
@@ -14,7 +15,7 @@ def generate_header(output, tools_files, tools, inventory, modules, extra_vars):
         f.write(f"modules={modules},\n")
         for e in extra_vars:
             e, _, _ = e.partition("=")
-            f.write(f"{e.lower()} = os.environ['{e.upper()}']")
+            f.write(f"{e.lower()} = os.environ['{e.upper()}'],\n")
         f.write(") as ftl:\n\n")
 
         for t in tools:
