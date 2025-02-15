@@ -4,6 +4,7 @@ from .core import create_model, run_agent
 from .default_tools import TOOLS
 from .tools import get_tool, load_tools
 from .prompts import SOLVE_PROBLEM
+from .codegen import generate_header, reformat, generate_tool_call
 import faster_than_light as ftl
 from smolagents.memory import ActionStep
 from smolagents.agent_types import AgentText
@@ -18,8 +19,11 @@ from smolagents.agent_types import AgentText
 @click.option("--inventory", "-i", default="inventory.yml")
 @click.option("--extra-vars", "-e", multiple=True)
 @click.option("--output", "-o", default="output.py")
-def main(tools, tools_files, problem, system_design, model, inventory, extra_vars, output):
+def main(
+    tools, tools_files, problem, system_design, model, inventory, extra_vars, output
+):
     """A agent that solves a problem given a system design and a set of tools"""
+    modules = ["modules"]
     tool_classes = {}
     tool_classes.update(TOOLS)
     for tf in tools_files:
@@ -34,8 +38,8 @@ def main(tools, tools_files, problem, system_design, model, inventory, extra_var
         name, _, value = extra_var.partition("=")
         state[name] = value
 
-    with open(output, "w") as f:
-        f.write("#/usr/bin/env python3\n")
+    generate_header(output, tools_files, tools, inventory, modules, extra_vars)
+
     for o in run_agent(
         tools=[get_tool(tool_classes, t, state) for t in tools],
         model=model,
@@ -46,12 +50,8 @@ def main(tools, tools_files, problem, system_design, model, inventory, extra_var
         if isinstance(o, ActionStep):
             print(o.tool_calls)
             for call in o.tool_calls:
-                with open(output, "a") as f:
-                    f.write(call.arguments)
-                    f.write("\n")
+                generate_tool_call(output, call)
         elif isinstance(o, AgentText):
             print(o.to_string())
 
-
-if __name__ == "__main__":
-    main()
+    reformat(output)
