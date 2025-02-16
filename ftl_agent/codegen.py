@@ -26,7 +26,8 @@ def generate_header(output, system_design, problem, tools_files, tools, inventor
 
 def generate_tool_call(output, call):
     with open(output, "a") as f:
-        f.write("\n    ".join(call.arguments.split("\n")))
+        f.write("\n    ")
+        f.write("\n    ".join(call.arguments.strip().split("\n")))
         f.write("\n")
 
 
