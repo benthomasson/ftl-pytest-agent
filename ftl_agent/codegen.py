@@ -1,7 +1,7 @@
 import os
 
 
-def generate_header(output, system_design, problem, tools_files, tools, inventory, modules, extra_vars):
+def generate_python_header(output, system_design, problem, tools_files, tools, inventory, modules, extra_vars):
 
     with open(output, "w") as f:
         f.write("#!/usr/bin/env python3\n")
@@ -24,12 +24,28 @@ def generate_header(output, system_design, problem, tools_files, tools, inventor
         f.write("\n")
 
 
-def generate_tool_call(output, call):
+def generate_python_tool_call(output, call):
     with open(output, "a") as f:
         f.write("\n    ")
         f.write("\n    ".join(call.arguments.strip().split("\n")))
         f.write("\n")
 
 
-def reformat(output):
+def reformat_python(output):
     os.system("black " + output)
+
+
+def generate_explain(explain, system_design, problem):
+    with open(explain, 'w') as f:
+        f.write(f"System design: {system_design}\n\nProblem: {problem}\n\n")
+
+
+def generate_explain_action_step(explain, o):
+    with open(explain, 'a') as f:
+        f.write(f"Step {o.step_number:2d} ")
+        f.write("-" * 100)
+        f.write("\n\n")
+        f.write(o.model_output)
+        f.write("\n\n")
+
+

@@ -4,11 +4,16 @@ from .core import create_model, run_agent
 from .default_tools import TOOLS
 from .tools import get_tool, load_tools
 from .prompts import SOLVE_PROBLEM
-from .codegen import generate_header, reformat, generate_tool_call
+from .codegen import (
+    generate_python_header,
+    reformat_python,
+    generate_python_tool_call,
+    generate_explain_header,
+    generate_explain_action_step,
+)
 import faster_than_light as ftl
 from smolagents.memory import ActionStep
 from smolagents.agent_types import AgentText
-from pprint import pprint
 
 
 @click.command()
@@ -22,7 +27,15 @@ from pprint import pprint
 @click.option("--output", "-o", default="output.py")
 @click.option("--explain", "-o", default="output.txt")
 def main(
-    tools, tools_files, problem, system_design, model, inventory, extra_vars, output, explain
+    tools,
+    tools_files,
+    problem,
+    system_design,
+    model,
+    inventory,
+    extra_vars,
+    output,
+    explain,
 ):
     """A agent that solves a problem given a system design and a set of tools"""
     modules = ["modules"]
@@ -40,10 +53,17 @@ def main(
         name, _, value = extra_var.partition("=")
         state[name] = value
 
-    generate_header(output, system_design, problem, tools_files, tools, inventory, modules, extra_vars)
-
-    with open(explain, 'w') as f:
-        f.write(f"System design: {system_design}\n\nProblem: {problem}\n\n")
+    generate_python_header(
+        output,
+        system_design,
+        problem,
+        tools_files,
+        tools,
+        inventory,
+        modules,
+        extra_vars,
+    )
+    generate_explain_header(explain, system_design, problem)
 
     for o in run_agent(
         tools=[get_tool(tool_classes, t, state) for t in tools],
@@ -53,16 +73,11 @@ def main(
         ),
     ):
         if isinstance(o, ActionStep):
-            with open(explain, 'a') as f:
-                f.write(f"Step {o.step_number:2d} ")
-                f.write("-" * 100)
-                f.write("\n\n")
-                f.write(o.model_output)
-                f.write("\n\n")
+            generate_explain_action_step(explain, o)
             if o.tool_calls:
                 for call in o.tool_calls:
-                    generate_tool_call(output, call)
+                    generate_python_tool_call(output, call)
         elif isinstance(o, AgentText):
             print(o.to_string())
 
-    reformat(output)
+    reformat_python(output)
