@@ -39,6 +39,8 @@ def main(tools_files, system_design, model, inventory, extra_vars):
             time.sleep(0.05)
             yield response[:i]
 
+        tools.append('complete')
+
         f = io.StringIO()
         with redirect_stdout(f):
             gen = run_agent(
