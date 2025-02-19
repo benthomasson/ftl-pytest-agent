@@ -920,10 +920,12 @@ class CodeAgent(MultiStepAgent):
         self.logger.log_code(title="Executing parsed code:", content=code_action, level=LogLevel.INFO)
         is_final_answer = False
         try:
-            output, execution_logs, is_final_answer = self.python_executor(
+            output, execution_logs, is_final_answer, trace = self.python_executor(
                 code_action,
                 self.state,
             )
+            print(f"{trace=}")
+            memory_step.trace = trace
             execution_outputs_console = []
             if len(execution_logs) > 0:
                 execution_outputs_console += [

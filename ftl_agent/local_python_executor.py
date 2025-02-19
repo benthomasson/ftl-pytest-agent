@@ -646,6 +646,7 @@ def evaluate_call(
                 raise InterpreterError(
                     f"Invoking a builtin function that has not been explicitly added as a tool is not allowed ({func_name})."
                 )
+            state['_trace'].append({'func_name': func_name, 'args': args, 'kwargs': kwargs})
             return func(*args, **kwargs)
 
 
@@ -1412,6 +1413,7 @@ class LocalPythonInterpreter:
         # TODO: assert self.authorized imports are all installed locally
 
     def __call__(self, code_action: str, additional_variables: Dict) -> Tuple[Any, str, bool]:
+        self.state['_trace'] = []
         self.state.update(additional_variables)
         output, is_final_answer = evaluate_python_code(
             code_action,
@@ -1422,7 +1424,8 @@ class LocalPythonInterpreter:
             max_print_outputs_length=self.max_print_outputs_length,
         )
         logs = str(self.state["_print_outputs"])
-        return output, logs, is_final_answer
+        trace = self.state['_trace']
+        return output, logs, is_final_answer, trace
 
 
 __all__ = ["evaluate_python_code", "LocalPythonInterpreter"]

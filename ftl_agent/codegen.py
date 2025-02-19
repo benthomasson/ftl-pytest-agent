@@ -1,7 +1,10 @@
 import os
+import yaml
 
 
-def generate_python_header(output, system_design, problem, tools_files, tools, inventory, modules, extra_vars):
+def generate_python_header(
+    output, system_design, problem, tools_files, tools, inventory, modules, extra_vars
+):
 
     with open(output, "w") as f:
         f.write("#!/usr/bin/env python3\n")
@@ -35,13 +38,13 @@ def reformat_python(output):
     os.system("black " + output)
 
 
-def generate_explain(explain, system_design, problem):
-    with open(explain, 'w') as f:
+def generate_explain_header(explain, system_design, problem):
+    with open(explain, "w") as f:
         f.write(f"System design: {system_design}\n\nProblem: {problem}\n\n")
 
 
 def generate_explain_action_step(explain, o):
-    with open(explain, 'a') as f:
+    with open(explain, "a") as f:
         f.write(f"Step {o.step_number:2d} ")
         f.write("-" * 100)
         f.write("\n\n")
@@ -49,3 +52,20 @@ def generate_explain_action_step(explain, o):
         f.write("\n\n")
 
 
+def generate_playbook_header(playbook, system_design, problem):
+    with open(playbook, "w") as f:
+        header = {"name": problem, "hosts": "all", "gather_facts": False, "tasks": []}
+        f.write(yaml.dump([header]))
+
+
+def generate_playbook_task(playbook, o):
+    with open(playbook, "r") as f:
+        data = yaml.safe_load(f.read())
+    for fn in o.trace:
+        name = fn['func_name']
+        if name == "complete":
+            continue
+        kwargs = fn['kwargs']
+        data[0]["tasks"].append({name: kwargs})
+    with open(playbook, "w") as f:
+        f.write(yaml.dump(data))

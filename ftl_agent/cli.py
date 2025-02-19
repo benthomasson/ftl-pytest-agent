@@ -10,6 +10,8 @@ from .codegen import (
     generate_python_tool_call,
     generate_explain_header,
     generate_explain_action_step,
+    generate_playbook_header,
+    generate_playbook_task,
 )
 import faster_than_light as ftl
 from smolagents.memory import ActionStep
@@ -26,6 +28,7 @@ from smolagents.agent_types import AgentText
 @click.option("--extra-vars", "-e", multiple=True)
 @click.option("--output", "-o", default="output.py")
 @click.option("--explain", "-o", default="output.txt")
+@click.option("--playbook", default="playbook.yml")
 def main(
     tools,
     tools_files,
@@ -36,6 +39,7 @@ def main(
     extra_vars,
     output,
     explain,
+    playbook,
 ):
     """A agent that solves a problem given a system design and a set of tools"""
     modules = ["modules"]
@@ -64,6 +68,7 @@ def main(
         extra_vars,
     )
     generate_explain_header(explain, system_design, problem)
+    generate_playbook_header(playbook, system_design, problem)
 
     for o in run_agent(
         tools=[get_tool(tool_classes, t, state) for t in tools],
@@ -77,6 +82,7 @@ def main(
             if o.tool_calls:
                 for call in o.tool_calls:
                     generate_python_tool_call(output, call)
+            generate_playbook_task(playbook, o)
         elif isinstance(o, AgentText):
             print(o.to_string())
 
