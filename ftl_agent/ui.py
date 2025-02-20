@@ -9,6 +9,17 @@ import gradio as gr
 import time
 from contextlib import redirect_stdout
 import io
+from .codegen import (
+    generate_python_header,
+    reformat_python,
+    generate_python_tool_call,
+    generate_explain_header,
+    generate_explain_action_step,
+    generate_playbook_header,
+    generate_playbook_task,
+)
+from smolagents.memory import ActionStep
+from smolagents.agent_types import AgentText
 
 
 @click.command()
@@ -17,8 +28,14 @@ import io
 @click.option("--model", "-m", default="ollama_chat/deepseek-r1:14b")
 @click.option("--inventory", "-i", default="inventory.yml")
 @click.option("--extra-vars", "-e", multiple=True)
-def main(tools_files, system_design, model, inventory, extra_vars):
+@click.option("--python", "-o", default="output.py")
+@click.option("--explain", "-o", default="output.txt")
+@click.option("--playbook", default="playbook.yml")
+def main(
+    tools_files, system_design, model, inventory, extra_vars, python, explain, playbook
+):
     """A agent that solves a problem given a system design and a set of tools"""
+    modules = ["modules"]
     tool_classes = {}
     tool_classes.update(TOOLS)
     for tf in tools_files:
@@ -27,19 +44,44 @@ def main(tools_files, system_design, model, inventory, extra_vars):
     state = {
         "LOCKED": True,
         "inventory": ftl.load_inventory(inventory),
-        "modules": ["modules"],
+        "modules": modules,
     }
     for extra_var in extra_vars:
         name, _, value = extra_var.partition("=")
         state[name] = value
 
-    def echo(problem, history, system_design, tools):
-        response = f"System desgin: {system_design}\n Problem: {problem}."
+    def bot(problem, history, system_design, tools):
+
+        generate_python_header(
+            python,
+            system_design,
+            problem,
+            tools_files,
+            tools,
+            inventory,
+            modules,
+            extra_vars,
+        )
+        generate_explain_header(explain, system_design, problem)
+        generate_playbook_header(playbook, system_design, problem)
+        python_output = ""
+        playbook_output = ""
+
+        def update_code():
+            nonlocal python_output, playbook_output
+            with open(python) as f:
+                python_output = f.read()
+            with open(playbook) as f:
+                playbook_output = f.read()
+
+        update_code()
+
+        response = f"System design: {system_design}\n Problem: {problem}."
         for i in range(len(response)):
             time.sleep(0.05)
-            yield response[:i]
+            yield response[:i], python_output, playbook_output
 
-        tools.append('complete')
+        tools.append("complete")
 
         f = io.StringIO()
         with redirect_stdout(f):
@@ -51,33 +93,54 @@ def main(tools_files, system_design, model, inventory, extra_vars):
                 ),
             )
         output = f.getvalue()
-        for i in range(len(output)):
-            time.sleep(0.00)
-            yield response + output[:i]
+        yield response + output, python_output, playbook_output
 
         response = response + output
         try:
             while True:
                 f = io.StringIO()
                 with redirect_stdout(f):
-                    next(gen)
+                    o = next(gen)
+                    if isinstance(o, ActionStep):
+                        generate_explain_action_step(explain, o)
+                        if o.tool_calls:
+                            for call in o.tool_calls:
+                                generate_python_tool_call(python, call)
+                        generate_playbook_task(playbook, o)
+                    elif isinstance(o, AgentText):
+                        print(o.to_string())
+
                 output = f.getvalue()
                 for i in range(len(output)):
                     time.sleep(0.00)
-                    yield response + output[:i]
+                    yield response + output[:i], python_output, playbook_output
                 response = response + output
         except StopIteration:
             pass
 
-    demo = gr.ChatInterface(
-        echo,
-        type="messages",
-        additional_inputs=[
-            gr.Textbox(system_design, label="System Design"),
-            gr.CheckboxGroup(choices=sorted(tool_classes), label="Tools"),
-        ],
-        additional_inputs_accordion=gr.Accordion(visible=True),
-    )
+        reformat_python(python)
+        update_code()
+        yield response + output[:i], python_output, playbook_output
+
+    with gr.Blocks() as demo:
+        python_code = gr.Code(render=False)
+        playbook_code = gr.Code(render=False)
+        with gr.Row():
+            with gr.Column():
+                gr.Markdown("<center><h1></h1></center>")
+                gr.ChatInterface(
+                    bot,
+                    type="messages",
+                    additional_inputs=[
+                        gr.Textbox(system_design, label="System Design"),
+                        gr.CheckboxGroup(choices=sorted(tool_classes), label="Tools"),
+                    ],
+                    # additional_inputs_accordion=gr.Accordion(visible=True),
+                    additional_outputs=[python_code, playbook_code],
+                )
+            with gr.Column():
+                python_code.render()
+                playbook_code.render()
 
     demo.launch()
 
