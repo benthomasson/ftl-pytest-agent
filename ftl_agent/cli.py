@@ -14,7 +14,7 @@ from .codegen import (
     generate_playbook_task,
 )
 import faster_than_light as ftl
-from smolagents.memory import ActionStep
+from ftl_agent.memory import ActionStep
 from smolagents.agent_types import AgentText
 
 
@@ -49,9 +49,10 @@ def main(
         tool_classes.update(load_tools(tf))
     model = create_model(model)
     state = {
-        "LOCKED": True,
         "inventory": ftl.load_inventory(inventory),
         "modules": ["modules"],
+        "localhost": ftl.localhost,
+        }
     }
     for extra_var in extra_vars:
         name, _, value = extra_var.partition("=")

@@ -6,6 +6,7 @@ from .default_tools import TOOLS
 from dataclasses import dataclass
 from faster_than_light import load_inventory
 from ftl_agent.local_python_executor import FinalAnswerException
+from faster_than_light import localhost
 
 
 class Tools(object):
@@ -23,7 +24,11 @@ class FTL:
 def automation(tools_files, tools, inventory, modules, **kwargs):
     tool_classes = {}
     tool_classes.update(TOOLS)
-    state = {'inventory': load_inventory(inventory), 'modules': modules}
+    state = {
+        "inventory": load_inventory(inventory),
+        "modules": modules,
+        "localhost": localhost,
+    }
     state.update(kwargs)
     for tf in tools_files:
         tool_classes.update(load_tools(tf))
