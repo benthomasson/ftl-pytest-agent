@@ -52,7 +52,6 @@ def main(
         "inventory": ftl.load_inventory(inventory),
         "modules": ["modules"],
         "localhost": ftl.localhost,
-        }
     }
     for extra_var in extra_vars:
         name, _, value = extra_var.partition("=")

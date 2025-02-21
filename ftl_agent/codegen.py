@@ -59,6 +59,8 @@ def generate_playbook_header(playbook, system_design, problem):
 
 
 def generate_playbook_task(playbook, o):
+    if not o.trace:
+        return
     with open(playbook, "r") as f:
         data = yaml.safe_load(f.read())
     for fn in o.trace:
