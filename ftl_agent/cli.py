@@ -79,10 +79,10 @@ def main(
     ):
         if isinstance(o, ActionStep):
             generate_explain_action_step(explain, o)
-            if o.tool_calls:
+            if o.trace and o.tool_calls:
                 for call in o.tool_calls:
                     generate_python_tool_call(output, call)
-            generate_playbook_task(playbook, o)
+                generate_playbook_task(playbook, o)
         elif isinstance(o, AgentText):
             print(o.to_string())
 
