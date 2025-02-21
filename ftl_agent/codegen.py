@@ -44,12 +44,13 @@ def generate_explain_header(explain, system_design, problem):
 
 
 def generate_explain_action_step(explain, o):
-    with open(explain, "a") as f:
-        f.write(f"Step {o.step_number:2d} ")
-        f.write("-" * 100)
-        f.write("\n\n")
-        f.write(o.model_output)
-        f.write("\n\n")
+    if o.model_output:
+        with open(explain, "a") as f:
+            f.write(f"Step {o.step_number:2d} ")
+            f.write("-" * 100)
+            f.write("\n\n")
+            f.write(o.model_output)
+            f.write("\n\n")
 
 
 def generate_playbook_header(playbook, system_design, problem):
