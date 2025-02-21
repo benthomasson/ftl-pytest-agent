@@ -1313,7 +1313,7 @@ def evaluate_ast(
         raise InterpreterError(f"{expression.__class__.__name__} is not supported.")
 
 
-class FinalAnswerException(Exception):
+class FinalAnswerException(BaseException):
     def __init__(self, value):
         self.value = value
 
