@@ -12,6 +12,7 @@ import io
 from .codegen import (
     generate_python_header,
     reformat_python,
+    add_lookup_plugins,
     generate_python_tool_call,
     generate_explain_header,
     generate_explain_action_step,
@@ -76,9 +77,9 @@ def main(
 
         update_code()
 
-        response = f"System design: {system_design}\n Problem: {problem}."
+        response = f"System design: {system_design}\n Problem: {problem}.\n"
         for i in range(len(response)):
-            time.sleep(0.05)
+            time.sleep(0.00)
             yield response[:i], python_output, playbook_output
 
         tools.append("complete")
@@ -119,6 +120,7 @@ def main(
             pass
 
         reformat_python(python)
+        add_lookup_plugins(playbook)
         update_code()
         yield response + output[:i], python_output, playbook_output
 

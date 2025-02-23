@@ -72,3 +72,20 @@ def generate_playbook_task(playbook, o):
         data[0]["tasks"].append({name: kwargs})
     with open(playbook, "w") as f:
         f.write(yaml.dump(data))
+
+
+def add_lookup_plugins(playbook):
+    with open(playbook, "r") as f:
+        data = yaml.safe_load(f.read())
+
+    for play in data:
+        for task in play.get('tasks', []):
+            print(task)
+            if 'authorized_key' in task:
+                args = task['authorized_key']
+                if 'key' in args and 'lookup' not in args['key']:
+                    args['key'] = '{{ lookup("file", "' + args['key'] + '" ) }}'
+
+    with open(playbook, "w") as f:
+        f.write(yaml.dump(data))
+
