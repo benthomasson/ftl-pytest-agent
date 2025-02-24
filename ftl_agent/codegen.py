@@ -8,7 +8,10 @@ def generate_python_header(
 
     with open(output, "w") as f:
         f.write("#!/usr/bin/env python3\n")
-        f.write(f'"""\nSystem Design: {system_design}\nProblem:{problem}\n"""\n')
+        f.write(f'"""\nSystem Design: {system_design}\n')
+        if problem:
+            f.write(f'Problem:{problem}\n')
+        f.write('"""\n')
         f.write("import ftl_agent\n")
         f.write("import os\n\n\n")
         f.write("with ftl_agent.automation(\n")
@@ -40,7 +43,9 @@ def reformat_python(output):
 
 def generate_explain_header(explain, system_design, problem):
     with open(explain, "w") as f:
-        f.write(f"System design: {system_design}\n\nProblem: {problem}\n\n")
+        f.write(f"System design: {system_design}\n\n")
+        if problem:
+            f.write("Problem: {problem}\n\n")
 
 
 def generate_explain_action_step(explain, o):
@@ -55,6 +60,8 @@ def generate_explain_action_step(explain, o):
 
 def generate_playbook_header(playbook, system_design, problem):
     with open(playbook, "w") as f:
+        if not problem:
+            problem = system_design
         header = {"name": problem, "hosts": "all", "gather_facts": False, "tasks": []}
         f.write(yaml.dump([header]))
 
