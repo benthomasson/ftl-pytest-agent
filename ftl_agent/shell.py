@@ -6,6 +6,7 @@ from .default_tools import TOOLS
 from .tools import get_tool, load_tools
 from .prompts import SOLVE_PROBLEM
 from .codegen import (
+    add_lookup_plugins,
     generate_python_header,
     reformat_python,
     generate_python_tool_call,
@@ -96,6 +97,7 @@ class FTLAgentShell(cmd.Cmd):
                 elif isinstance(o, AgentText):
                     print(o.to_string())
 
+            add_lookup_plugins(self.playbook)
             reformat_python(self.output)
         except KeyboardInterrupt:
             print('Run interrupted')
@@ -112,9 +114,10 @@ class FTLAgentShell(cmd.Cmd):
 
     def default(self, line):
         if line:
-            self.problem = line
-        print(self.problem)
-        self.do_run("")
+            if not self.problem:
+                self.problem = ""
+            self.problem += line
+            self.problem += "\n"
 
     def do_tools(self, line):
         print(self.tools)
@@ -127,6 +130,9 @@ class FTLAgentShell(cmd.Cmd):
 
     def do_exit(self, line):
         raise SystemExit()
+
+    def do_clear(self, line):
+        self.problem = ""
 
 @click.command()
 @click.option("--tools", "-t", multiple=True)
