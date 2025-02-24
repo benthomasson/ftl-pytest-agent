@@ -924,7 +924,6 @@ class CodeAgent(MultiStepAgent):
                 code_action,
                 self.state,
             )
-            print(f"{trace=}")
             memory_step.trace = trace
             execution_outputs_console = []
             if len(execution_logs) > 0:

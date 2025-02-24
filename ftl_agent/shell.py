@@ -57,7 +57,11 @@ class FTLAgentShell(cmd.Cmd):
         self.explain = explain
         self.playbook = playbook
 
-    def do_run(self, line):
+        self.do_header("")
+
+
+    def do_header(self, line):
+
         generate_python_header(
             self.output,
             self.system_design,
@@ -71,23 +75,30 @@ class FTLAgentShell(cmd.Cmd):
         generate_explain_header(self.explain, self.system_design, self.problem)
         generate_playbook_header(self.playbook, self.system_design, self.problem)
 
-        for o in run_agent(
-            tools=[get_tool(self.tool_classes, t, self.state) for t in self.tools],
-            model=self.model,
-            problem_statement=SOLVE_PROBLEM.format(
-                problem=self.problem, system_design=self.system_design
-            ),
-        ):
-            if isinstance(o, ActionStep):
-                generate_explain_action_step(self.explain, o)
-                if o.trace and o.tool_calls:
-                    for call in o.tool_calls:
-                        generate_python_tool_call(self.output, call)
-                    generate_playbook_task(self.playbook, o)
-            elif isinstance(o, AgentText):
-                print(o.to_string())
+    def do_run(self, line):
 
-        reformat_python(self.output)
+        try:
+            gen = run_agent(
+                tools=[get_tool(self.tool_classes, t, self.state) for t in self.tools],
+                model=self.model,
+                problem_statement=SOLVE_PROBLEM.format(
+                    problem=self.problem, system_design=self.system_design
+                ),
+            )
+
+            for o in gen:
+                if isinstance(o, ActionStep):
+                    generate_explain_action_step(self.explain, o)
+                    if o.trace and o.tool_calls:
+                        for call in o.tool_calls:
+                            generate_python_tool_call(self.output, call)
+                        generate_playbook_task(self.playbook, o)
+                elif isinstance(o, AgentText):
+                    print(o.to_string())
+
+            reformat_python(self.output)
+        except KeyboardInterrupt:
+            print('Run interrupted')
 
     def do_systemdesign(self, line):
         if line:
@@ -103,9 +114,19 @@ class FTLAgentShell(cmd.Cmd):
         if line:
             self.problem = line
         print(self.problem)
+        self.do_run("")
 
     def do_tools(self, line):
         print(self.tools)
+
+    def do_EOF(self, line):
+        raise SystemExit()
+
+    def do_quit(self, line):
+        raise SystemExit()
+
+    def do_exit(self, line):
+        raise SystemExit()
 
 @click.command()
 @click.option("--tools", "-t", multiple=True)
