@@ -59,8 +59,8 @@ from smolagents.models import (
     MessageRole,
 )
 from smolagents.monitoring import Monitor
+from ftl_agent.prompts import CODE_SYSTEM_PROMPT
 from smolagents.prompts import (
-    CODE_SYSTEM_PROMPT,
     MANAGED_AGENT_PROMPT,
     PLAN_UPDATE_FINAL_PLAN_REDACTION,
     SYSTEM_PROMPT_FACTS,
