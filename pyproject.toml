@@ -5,6 +5,7 @@ dependencies = [
     "smolagents[litellm] @ git+ssh://git@github.com/benthomasson/smolagents@66b76200e79df54d8b9e96d31f2bfd04fa578f94",
     "faster_than_light",
     "gradio",
+    "black",
 ]
 
 [tool.setuptools]
