@@ -82,16 +82,27 @@ def generate_playbook_task(playbook, o):
 
 
 def add_lookup_plugins(playbook):
+    """
+    This needs a better solution.
+    A second pass isn't terrible, but I need a way to map additional
+    arguments.
+    """
     with open(playbook, "r") as f:
         data = yaml.safe_load(f.read())
 
     for play in data:
         for task in play.get('tasks', []):
-            print(task)
             if 'authorized_key' in task:
                 args = task['authorized_key']
                 if 'key' in args and 'lookup' not in args['key']:
                     args['key'] = '{{ lookup("file", "' + args['key'] + '" ) }}'
+            if 'slack' in task:
+                args = task['slack']
+                args['token'] = "{{ lookup('ansible.builtin.env', 'SLACK_TOKEN') }}"
+            if 'discord' in task:
+                args = task['discord']
+                args['webhook_token'] = "{{ lookup('ansible.builtin.env', 'DISCORD_TOKEN') }}"
+                args['webhook_id'] = "{{ lookup('ansible.builtin.env', 'DISCORD_CHANNEL') }}"
 
     with open(playbook, "w") as f:
         f.write(yaml.dump(data))
