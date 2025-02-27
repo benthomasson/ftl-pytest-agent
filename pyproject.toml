@@ -9,7 +9,7 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["ftl_agent"]
+packages = ["ftl_agent", "ftl_agent.prompts"]
 
 [build-system]
 requires = ["setuptools"]
@@ -20,6 +20,6 @@ ftl-agent = "ftl_agent.cli:main"
 ftl-agent-ui = "ftl_agent.ui:main"
 ftl-agent-shell = "ftl_agent.shell:main"
 
-[tool.ftl_agent.package-data]
+[tool.setuptools.package-data]
 "ftl_agent.prompts" = ["*.yaml"]
 
