@@ -1268,7 +1268,7 @@ class CodeAgent(MultiStepAgent):
         try:
             code_action = fix_final_answer_code(parse_code_blobs(model_output))
         except Exception as e:
-            error_msg = f"Error in code parsing:\n{e}\nMake sure to provide correct code blobs."
+            error_msg = f"Error in code parsing:\n{e}\nMake sure to provide correct code blobs and call complete when done."
             raise AgentParsingError(error_msg, self.logger)
 
         memory_step.tool_calls = [
