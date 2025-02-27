@@ -2,7 +2,7 @@
 name = "ftl-agent"
 version = "0.1.0"
 dependencies = [
-    "smolagents[litellm] @ git+ssh://git@github.com/benthomasson/smolagents@66b76200e79df54d8b9e96d31f2bfd04fa578f94",
+    "smolagents[litellm]==1.9.2",
     "faster_than_light",
     "gradio",
     "black",
@@ -20,4 +20,6 @@ ftl-agent = "ftl_agent.cli:main"
 ftl-agent-ui = "ftl_agent.ui:main"
 ftl-agent-shell = "ftl_agent.shell:main"
 
+[tool.ftl_agent.package-data]
+"ftl_agent.prompts" = ["*.yaml"]
 
