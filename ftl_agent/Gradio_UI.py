@@ -14,6 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#
+# Originally from First_agent_template/Gradio_UI.py.
+# Modifications for ftl-agent
+#
+
 
 
 import mimetypes
@@ -23,9 +28,11 @@ import shutil
 from typing import Optional
 
 from smolagents.agent_types import AgentAudio, AgentImage, AgentText, handle_agent_output_types
-from smolagents.agents import ActionStep, MultiStepAgent
-from smolagents.memory import MemoryStep
+from smolagents.agents import MultiStepAgent
+from smolagents.memory import MemoryStep, ActionStep
 from smolagents.utils import _is_package_available
+
+from pprint import pprint
 
 
 def pull_messages_from_step(
@@ -34,6 +41,8 @@ def pull_messages_from_step(
     """Extract ChatMessage objects from agent steps with proper nesting"""
     import gradio as gr
 
+
+    print(f'1. {type(step_log)=}')
     if isinstance(step_log, ActionStep):
         # Output the step number
         step_number = f"Step {step_log.step_number}" if step_log.step_number is not None else ""
@@ -59,6 +68,7 @@ def pull_messages_from_step(
             # Tool call becomes the parent message with timing info
             # First we will handle arguments based on type
             args = first_tool_call.arguments
+            print(f'2. {type(args)=}')
             if isinstance(args, dict):
                 content = str(args.get("answer", str(args)))
             else:
@@ -147,6 +157,7 @@ def stream_to_gradio(
         if hasattr(agent.model, "last_input_token_count"):
             total_input_tokens += agent.model.last_input_token_count
             total_output_tokens += agent.model.last_output_token_count
+            print(f'3. {type(step_log)=}')
             if isinstance(step_log, ActionStep):
                 step_log.input_token_count = agent.model.last_input_token_count
                 step_log.output_token_count = agent.model.last_output_token_count
@@ -159,6 +170,7 @@ def stream_to_gradio(
     final_answer = step_log  # Last log is the run's final_answer
     final_answer = handle_agent_output_types(final_answer)
 
+    print(f'4. {type(final_answer)=}')
     if isinstance(final_answer, AgentText):
         yield gr.ChatMessage(
             role="assistant",
@@ -195,6 +207,8 @@ class GradioUI:
     def interact_with_agent(self, prompt, messages):
         import gradio as gr
 
+        #chat interface only needs the latest messages yielded
+        messages = []
         messages.append(gr.ChatMessage(role="user", content=prompt))
         yield messages
         for msg in stream_to_gradio(self.agent, task=prompt, reset_agent_memory=False):
@@ -202,98 +216,35 @@ class GradioUI:
             yield messages
         yield messages
 
-    def upload_file(
-        self,
-        file,
-        file_uploads_log,
-        allowed_file_types=[
-            "application/pdf",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "text/plain",
-        ],
-    ):
-        """
-        Handle file uploads, default allowed types are .pdf, .docx, and .txt
-        """
-        import gradio as gr
-
-        if file is None:
-            return gr.Textbox("No file uploaded", visible=True), file_uploads_log
-
-        try:
-            mime_type, _ = mimetypes.guess_type(file.name)
-        except Exception as e:
-            return gr.Textbox(f"Error: {e}", visible=True), file_uploads_log
-
-        if mime_type not in allowed_file_types:
-            return gr.Textbox("File type disallowed", visible=True), file_uploads_log
-
-        # Sanitize file name
-        original_name = os.path.basename(file.name)
-        sanitized_name = re.sub(
-            r"[^\w\-.]", "_", original_name
-        )  # Replace any non-alphanumeric, non-dash, or non-dot characters with underscores
-
-        type_to_ext = {}
-        for ext, t in mimetypes.types_map.items():
-            if t not in type_to_ext:
-                type_to_ext[t] = ext
-
-        # Ensure the extension correlates to the mime type
-        sanitized_name = sanitized_name.split(".")[:-1]
-        sanitized_name.append("" + type_to_ext[mime_type])
-        sanitized_name = "".join(sanitized_name)
-
-        # Save the uploaded file to the specified folder
-        file_path = os.path.join(self.file_upload_folder, os.path.basename(sanitized_name))
-        shutil.copy(file.name, file_path)
-
-        return gr.Textbox(f"File uploaded: {file_path}", visible=True), file_uploads_log + [file_path]
-
-    def log_user_message(self, text_input, file_uploads_log):
-        return (
-            text_input
-            + (
-                f"\nYou have been provided with these files, which might be helpful or not: {file_uploads_log}"
-                if len(file_uploads_log) > 0
-                else ""
-            ),
-            "",
-        )
-
-    def launch(self, **kwargs):
+    def launch(self, tool_classes, system_design,  **kwargs):
         import gradio as gr
 
         with gr.Blocks(fill_height=True) as demo:
-            stored_messages = gr.State([])
-            file_uploads_log = gr.State([])
-            chatbot = gr.Chatbot(
-                label="Agent",
-                type="messages",
-                avatar_images=(
-                    None,
-                    "https://huggingface.co/datasets/agents-course/course-images/resolve/main/en/communication/Alfred.png",
-                ),
-                resizeable=True,
-                scale=1,
-            )
-            # If an upload folder is provided, enable the upload feature
-            if self.file_upload_folder is not None:
-                upload_file = gr.File(label="Upload a file")
-                upload_status = gr.Textbox(label="Upload Status", interactive=False, visible=False)
-                upload_file.change(
-                    self.upload_file,
-                    [upload_file, file_uploads_log],
-                    [upload_status, file_uploads_log],
-                )
-            text_input = gr.Textbox(lines=1, label="Chat Message")
-            text_input.submit(
-                self.log_user_message,
-                [text_input, file_uploads_log],
-                [stored_messages, text_input],
-            ).then(self.interact_with_agent, [stored_messages, chatbot], [chatbot])
+            python_code = gr.Code(render=False)
+            playbook_code = gr.Code(render=False)
+            with gr.Row():
+                with gr.Column():
+                    chatbot = gr.Chatbot(
+                        label="Agent",
+                        type="messages",
+                        avatar_images=(
+                            None,
+                            "https://huggingface.co/datasets/agents-course/course-images/resolve/main/en/communication/Alfred.png",
+                        ),
+                        inputs=[
+                            gr.Textbox(system_design, label="System Design"),
+                            gr.CheckboxGroup(choices=sorted(tool_classes), label="Tools"),
+                        ],
+                        resizeable=True,
+                        scale=1,
+                    )
+                    gr.ChatInterface(fn=self.interact_with_agent, type="messages", chatbot=chatbot)
 
-        demo.launch(debug=True, share=True, **kwargs)
+                with gr.Column():
+                    python_code.render()
+                    playbook_code.render()
+
+        demo.launch(debug=True, **kwargs)
 
 
 __all__ = ["stream_to_gradio", "GradioUI"]

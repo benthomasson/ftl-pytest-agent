@@ -58,7 +58,7 @@ def main(
         tools=[get_tool(tool_classes, t, state) for t in tools],
         model=model,
     )
-    GradioUI(agent).launch()
+    GradioUI(agent).launch(tool_classes, system_design)
 
 
 if __name__ == "__main__":
