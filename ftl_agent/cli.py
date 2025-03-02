@@ -24,6 +24,7 @@ from smolagents.agent_types import AgentText
 @click.option("--problem", "-p", prompt="What is the problem?")
 @click.option("--system-design", "-s", prompt="What is the system design?")
 @click.option("--model", "-m", default="ollama_chat/deepseek-r1:14b")
+@click.option("--modules", "-M", default=['modules'], multiple=True)
 @click.option("--inventory", "-i", default="inventory.yml")
 @click.option("--extra-vars", "-e", multiple=True)
 @click.option("--output", "-o", default="output.py")
@@ -35,6 +36,7 @@ def main(
     problem,
     system_design,
     model,
+    modules,
     inventory,
     extra_vars,
     output,
@@ -42,7 +44,6 @@ def main(
     playbook,
 ):
     """A agent that solves a problem given a system design and a set of tools"""
-    modules = ["modules"]
     tool_classes = {}
     tool_classes.update(TOOLS)
     for tf in tools_files:
@@ -50,7 +51,7 @@ def main(
     model = create_model(model)
     state = {
         "inventory": ftl.load_inventory(inventory),
-        "modules": ["modules"],
+        "modules": modules,
         "localhost": ftl.localhost,
     }
     for extra_var in extra_vars:
