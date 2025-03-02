@@ -19,6 +19,7 @@ build-backend = "setuptools.build_meta"
 ftl-agent = "ftl_agent.cli:main"
 ftl-agent-ui = "ftl_agent.ui:main"
 ftl-agent-shell = "ftl_agent.shell:main"
+ftl-agent-ui2 = "ftl_agent.ui2:main"
 
 [tool.setuptools.package-data]
 "ftl_agent.prompts" = ["*.yaml"]
