@@ -47,7 +47,8 @@ from ftl_agent.local_python_executor import (
     LocalPythonInterpreter,
     fix_final_answer_code,
 )
-from smolagents.memory import ActionStep, AgentMemory, PlanningStep, SystemPromptStep, TaskStep, ToolCall
+from smolagents.memory import AgentMemory, PlanningStep, SystemPromptStep, TaskStep, ToolCall
+from ftl_agent.memory import ActionStep
 from smolagents.models import (
     ChatMessage,
     MessageRole,

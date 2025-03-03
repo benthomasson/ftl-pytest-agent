@@ -29,7 +29,8 @@ from typing import Optional
 
 from smolagents.agent_types import AgentAudio, AgentImage, AgentText, handle_agent_output_types
 from smolagents.agents import MultiStepAgent
-from smolagents.memory import MemoryStep, ActionStep
+from smolagents.memory import MemoryStep
+from ftl_agent.memory import ActionStep
 from smolagents.utils import _is_package_available
 
 from pprint import pprint
@@ -50,17 +51,23 @@ def pull_messages_from_step(
 
         # First yield the thought/reasoning from the LLM
         if hasattr(step_log, "model_output") and step_log.model_output is not None:
+            print("model_output")
             # Clean up the LLM output
             model_output = step_log.model_output.strip()
+            # Remove think tokens
+            model_output = re.sub(r"<think>", "", model_output)  # handles <think>
+            model_output = re.sub(r"</think>", "", model_output)  # handles </think>
             # Remove any trailing <end_code> and extra backticks, handling multiple possible formats
             model_output = re.sub(r"```\s*<end_code>", "```", model_output)  # handles ```<end_code>
             model_output = re.sub(r"<end_code>\s*```", "```", model_output)  # handles <end_code>```
             model_output = re.sub(r"```\s*\n\s*<end_code>", "```", model_output)  # handles ```\n<end_code>
             model_output = model_output.strip()
+            print(f"{model_output=}")
             yield gr.ChatMessage(role="assistant", content=model_output)
 
         # For tool calls, create a parent message
         if hasattr(step_log, "tool_calls") and step_log.tool_calls is not None:
+            print("tool_calls")
             first_tool_call = step_log.tool_calls[0]
             used_code = first_tool_call.name == "python_interpreter"
             parent_id = f"call_{len(step_log.tool_calls)}"
@@ -119,16 +126,19 @@ def pull_messages_from_step(
 
         # Handle standalone errors but not from tool calls
         elif hasattr(step_log, "error") and step_log.error is not None:
+            print("error")
             yield gr.ChatMessage(role="assistant", content=str(step_log.error), metadata={"title": "💥 Error"})
 
         # Calculate duration and token information
         step_footnote = f"{step_number}"
         if hasattr(step_log, "input_token_count") and hasattr(step_log, "output_token_count"):
+            print("input_token_count")
             token_str = (
                 f" | Input-tokens:{step_log.input_token_count:,} | Output-tokens:{step_log.output_token_count:,}"
             )
             step_footnote += token_str
         if hasattr(step_log, "duration"):
+            print("duration")
             step_duration = f" | Duration: {round(float(step_log.duration), 2)}" if step_log.duration else None
             step_footnote += step_duration
         step_footnote = f"""<span style="color: #bbbbc2; font-size: 12px;">{step_footnote}</span> """
