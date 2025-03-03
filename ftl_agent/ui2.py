@@ -19,7 +19,11 @@ from ftl_agent.util import Bunch
 from ftl_agent.Gradio_UI import stream_to_gradio
 
 
-def bot(agent, context, prompt, messages, system_design, tools):
+def bot(context, prompt, messages, system_design, tools):
+    agent = make_agent(
+        tools=[get_tool(context.tool_classes, t, context.state) for t in tools],
+        model=context.model,
+    )
     generate_python_header(
         context.python,
         system_design,
@@ -62,7 +66,7 @@ def bot(agent, context, prompt, messages, system_design, tools):
     yield messages, python_output, playbook_output
 
 
-def launch(agent, context, tool_classes, system_design, **kwargs):
+def launch(context, tool_classes, system_design, **kwargs):
     with gr.Blocks(fill_height=True) as demo:
         python_code = gr.Code(render=False)
         playbook_code = gr.Code(render=False)
@@ -75,7 +79,7 @@ def launch(agent, context, tool_classes, system_design, **kwargs):
                     scale=1,
                 )
                 gr.ChatInterface(
-                    fn=partial(bot, agent, context),
+                    fn=partial(bot, context),
                     type="messages",
                     chatbot=chatbot,
                     additional_inputs=[
@@ -132,12 +136,9 @@ def main(
         name, _, value = extra_var.partition("=")
         state[name] = value
 
-    agent = make_agent(
-        tools=[get_tool(tool_classes, t, state) for t in tools],
-        model=model,
-    )
-
     context = Bunch(
+        tool_classes=tool_classes,
+        state=state,
         tools_files=tools_files,
         tools=tools,
         system_design=system_design,
@@ -150,4 +151,4 @@ def main(
         playbook=playbook,
     )
 
-    launch(agent, context, tool_classes, system_design)
+    launch(context, tool_classes, system_design)
