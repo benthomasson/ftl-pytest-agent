@@ -279,7 +279,7 @@ def create_function(
         ]
 
         # Apply default values
-        defaults = dict(zip(arg_names[-len(default_values) :], default_values))
+        defaults = dict(zip(arg_names[-len(default_values):], default_values))
 
         # Set positional arguments
         for name, value in zip(arg_names, args):
@@ -647,6 +647,7 @@ def evaluate_call(
                 raise InterpreterError(
                     f"Invoking a builtin function that has not been explicitly added as a tool is not allowed ({func_name})."
                 )
+            state['_trace'].append({'func_name': func_name, 'args': args, 'kwargs': kwargs})
             return func(*args, **kwargs)
 
 

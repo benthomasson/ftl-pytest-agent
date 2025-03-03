@@ -28,15 +28,15 @@ from smolagents.agent_types import AgentText
 @click.option("--system-design", "-s")
 @click.option("--model", "-m", default="ollama_chat/deepseek-r1:14b")
 @click.option("--inventory", "-i", default="inventory.yml")
+@click.option("--modules", "-M", default=["modules"], multiple=True)
 @click.option("--extra-vars", "-e", multiple=True)
 @click.option("--python", "-o", default="output.py")
 @click.option("--explain", "-o", default="output.txt")
 @click.option("--playbook", default="playbook.yml")
 def main(
-    tools_files, system_design, model, inventory, extra_vars, python, explain, playbook
+    tools_files, system_design, model, inventory, modules, extra_vars, python, explain, playbook
 ):
     """A agent that solves a problem given a system design and a set of tools"""
-    modules = ["modules"]
     tool_classes = {}
     tool_classes.update(TOOLS)
     for tf in tools_files:
