@@ -23,13 +23,8 @@
 import gradio as gr
 import re
 from .codegen import (
-    generate_python_header,
-    reformat_python,
-    add_lookup_plugins,
     generate_python_tool_call,
-    generate_explain_header,
     generate_explain_action_step,
-    generate_playbook_header,
     generate_playbook_task,
 )
 from typing import Optional
@@ -40,7 +35,6 @@ from smolagents.agent_types import (
     AgentText,
     handle_agent_output_types,
 )
-from smolagents.agents import MultiStepAgent
 from smolagents.memory import MemoryStep
 from ftl_agent.memory import ActionStep
 
@@ -241,94 +235,4 @@ def stream_to_gradio(
         )
 
 
-class Bunch:
-    def __init__(self, kwargs):
-        self.__dict__.update(kwargs)
-
-
-class GradioUI:
-    """A one-line interface to launch your agent in Gradio"""
-
-    def __init__(self, agent: MultiStepAgent, **kwargs):
-        self.agent = agent
-        self.context = Bunch(kwargs)
-
-    def interact_with_agent(self, prompt, messages, system_design, tools):
-        generate_python_header(
-            self.context.python,
-            system_design,
-            prompt,
-            self.context.tools_files,
-            tools,
-            self.context.inventory,
-            self.context.modules,
-            self.context.extra_vars,
-        )
-        generate_explain_header(self.context.explain, system_design, prompt)
-        generate_playbook_header(self.context.playbook, system_design, prompt)
-
-        def update_code():
-            nonlocal python_output, playbook_output
-            with open(self.context.python) as f:
-                python_output = f.read()
-            with open(self.context.playbook) as f:
-                playbook_output = f.read()
-
-        python_output = ""
-        playbook_output = ""
-
-        update_code()
-
-        # chat interface only needs the latest messages yielded
-        messages = []
-        messages.append(gr.ChatMessage(role="user", content=prompt))
-        yield messages, python_output, playbook_output
-        for msg in stream_to_gradio(
-            self.agent, self.context, task=prompt, reset_agent_memory=False
-        ):
-            update_code()
-            messages.append(msg)
-            yield messages, python_output, playbook_output
-
-        reformat_python(self.context.python)
-        add_lookup_plugins(self.context.playbook)
-        update_code()
-        yield messages, python_output, playbook_output
-
-    def launch(self, tool_classes, system_design, **kwargs):
-        with gr.Blocks(fill_height=True) as demo:
-            python_code = gr.Code(render=False)
-            playbook_code = gr.Code(render=False)
-            with gr.Row():
-                with gr.Column():
-                    chatbot = gr.Chatbot(
-                        label="Agent",
-                        type="messages",
-                        avatar_images=(
-                            None,
-                            "https://huggingface.co/datasets/agents-course/course-images/resolve/main/en/communication/Alfred.png",
-                        ),
-                        resizeable=True,
-                        scale=1,
-                    )
-                    gr.ChatInterface(
-                        fn=self.interact_with_agent,
-                        type="messages",
-                        chatbot=chatbot,
-                        additional_inputs=[
-                            gr.Textbox(system_design, label="System Design"),
-                            gr.CheckboxGroup(
-                                choices=sorted(tool_classes), label="Tools"
-                            ),
-                        ],
-                        additional_outputs=[python_code, playbook_code],
-                    )
-
-                with gr.Column():
-                    python_code.render()
-                    playbook_code.render()
-
-        demo.launch(debug=True, **kwargs)
-
-
-__all__ = ["stream_to_gradio", "GradioUI"]
+__all__ = ["stream_to_gradio"]

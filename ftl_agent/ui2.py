@@ -3,26 +3,95 @@ import click
 from .core import create_model, make_agent
 from .default_tools import TOOLS
 from .tools import get_tool, load_tools
-from .prompts import SOLVE_PROBLEM
 import faster_than_light as ftl
 import gradio as gr
-import time
-from contextlib import redirect_stdout
-import io
+from functools import partial
+
 from .codegen import (
     generate_python_header,
     reformat_python,
     add_lookup_plugins,
-    generate_python_tool_call,
     generate_explain_header,
-    generate_explain_action_step,
     generate_playbook_header,
-    generate_playbook_task,
 )
-from ftl_agent.memory import ActionStep
-from smolagents.agent_types import AgentText
 
-from .Gradio_UI import GradioUI
+from ftl_agent.util import Bunch
+from ftl_agent.Gradio_UI import stream_to_gradio
+
+
+def bot(agent, context, prompt, messages, system_design, tools):
+    generate_python_header(
+        context.python,
+        system_design,
+        prompt,
+        context.tools_files,
+        tools,
+        context.inventory,
+        context.modules,
+        context.extra_vars,
+    )
+    generate_explain_header(context.explain, system_design, prompt)
+    generate_playbook_header(context.playbook, system_design, prompt)
+
+    def update_code():
+        nonlocal python_output, playbook_output
+        with open(context.python) as f:
+            python_output = f.read()
+        with open(context.playbook) as f:
+            playbook_output = f.read()
+
+    python_output = ""
+    playbook_output = ""
+
+    update_code()
+
+    # chat interface only needs the latest messages yielded
+    messages = []
+    messages.append(gr.ChatMessage(role="user", content=prompt))
+    yield messages, python_output, playbook_output
+    for msg in stream_to_gradio(
+        agent, context, task=prompt, reset_agent_memory=False
+    ):
+        update_code()
+        messages.append(msg)
+        yield messages, python_output, playbook_output
+
+    reformat_python(context.python)
+    add_lookup_plugins(context.playbook)
+    update_code()
+    yield messages, python_output, playbook_output
+
+
+def launch(agent, context, tool_classes, system_design, **kwargs):
+    with gr.Blocks(fill_height=True) as demo:
+        python_code = gr.Code(render=False)
+        playbook_code = gr.Code(render=False)
+        with gr.Row():
+            with gr.Column():
+                chatbot = gr.Chatbot(
+                    label="Agent",
+                    type="messages",
+                    resizeable=True,
+                    scale=1,
+                )
+                gr.ChatInterface(
+                    fn=partial(bot, agent, context),
+                    type="messages",
+                    chatbot=chatbot,
+                    additional_inputs=[
+                        gr.Textbox(system_design, label="System Design"),
+                        gr.CheckboxGroup(
+                            choices=sorted(tool_classes), label="Tools"
+                        ),
+                    ],
+                    additional_outputs=[python_code, playbook_code],
+                )
+
+            with gr.Column():
+                python_code.render()
+                playbook_code.render()
+
+        demo.launch(debug=True, **kwargs)
 
 
 @click.command()
@@ -67,8 +136,8 @@ def main(
         tools=[get_tool(tool_classes, t, state) for t in tools],
         model=model,
     )
-    GradioUI(
-        agent,
+
+    context = Bunch(
         tools_files=tools_files,
         tools=tools,
         system_design=system_design,
@@ -79,8 +148,6 @@ def main(
         python=python,
         explain=explain,
         playbook=playbook,
-    ).launch(tool_classes, system_design)
+    )
 
-
-if __name__ == "__main__":
-    main()
+    launch(agent, context, tool_classes, system_design)
