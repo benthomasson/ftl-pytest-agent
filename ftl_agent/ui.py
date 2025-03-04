@@ -1,30 +1,106 @@
 import click
 
-from .core import create_model, run_agent
+from .core import create_model, make_agent
 from .default_tools import TOOLS
 from .tools import get_tool, load_tools
-from .prompts import SOLVE_PROBLEM
 import faster_than_light as ftl
 import gradio as gr
-import time
-from contextlib import redirect_stdout
-import io
+from functools import partial
+
 from .codegen import (
     generate_python_header,
     reformat_python,
     add_lookup_plugins,
-    generate_python_tool_call,
     generate_explain_header,
-    generate_explain_action_step,
     generate_playbook_header,
-    generate_playbook_task,
 )
-from ftl_agent.memory import ActionStep
-from smolagents.agent_types import AgentText
+
+from ftl_agent.util import Bunch
+from ftl_agent.Gradio_UI import stream_to_gradio
+
+
+def bot(context, prompt, messages, system_design, tools):
+    agent = make_agent(
+        tools=[get_tool(context.tool_classes, t, context.state) for t in tools],
+        model=context.model,
+    )
+    generate_python_header(
+        context.python,
+        system_design,
+        prompt,
+        context.tools_files,
+        tools,
+        context.inventory,
+        context.modules,
+        context.extra_vars,
+    )
+    generate_explain_header(context.explain, system_design, prompt)
+    generate_playbook_header(context.playbook, system_design, prompt)
+
+    def update_code():
+        nonlocal python_output, playbook_output
+        with open(context.python) as f:
+            python_output = f.read()
+        with open(context.playbook) as f:
+            playbook_output = f.read()
+
+    python_output = ""
+    playbook_output = ""
+
+    update_code()
+
+    # chat interface only needs the latest messages yielded
+    messages = []
+    messages.append(gr.ChatMessage(role="user", content=prompt))
+    yield messages, python_output, playbook_output
+    for msg in stream_to_gradio(
+        agent, context, task=prompt, reset_agent_memory=False
+    ):
+        update_code()
+        messages.append(msg)
+        yield messages, python_output, playbook_output
+
+    reformat_python(context.python)
+    add_lookup_plugins(context.playbook)
+    update_code()
+    yield messages, python_output, playbook_output
+
+
+def launch(context, tool_classes, system_design, **kwargs):
+    with gr.Blocks(fill_height=True) as demo:
+        python_code = gr.Code(render=False)
+        playbook_code = gr.Code(render=False)
+        with gr.Row():
+            with gr.Column():
+                chatbot = gr.Chatbot(
+                    label="Agent",
+                    type="messages",
+                    resizeable=True,
+                    scale=1,
+                )
+                gr.ChatInterface(
+                    fn=partial(bot, context),
+                    type="messages",
+                    chatbot=chatbot,
+                    additional_inputs=[
+                        gr.Textbox(system_design, label="System Design"),
+                        gr.CheckboxGroup(
+                            choices=sorted(tool_classes), label="Tools"
+                        ),
+                    ],
+                    additional_outputs=[python_code, playbook_code],
+                )
+
+            with gr.Column():
+                python_code.render()
+                playbook_code.render()
+
+        demo.launch(debug=True, **kwargs)
 
 
 @click.command()
 @click.option("--tools-files", "-f", multiple=True)
+@click.option("--tools", "-t", multiple=True)
 @click.option("--system-design", "-s")
 @click.option("--model", "-m", default="ollama_chat/deepseek-r1:14b")
 @click.option("--inventory", "-i", default="inventory.yml")
@@ -34,7 +110,16 @@ from smolagents.agent_types import AgentText
 @click.option("--explain", "-o", default="output.txt")
 @click.option("--playbook", default="playbook.yml")
 def main(
-    tools_files, system_design, model, inventory, modules, extra_vars, python, explain, playbook
+    tools_files,
+    tools,
+    system_design,
+    model,
+    inventory,
+    modules,
+    extra_vars,
+    python,
+    explain,
+    playbook,
 ):
     """A agent that solves a problem given a system design and a set of tools"""
     tool_classes = {}
@@ -51,101 +136,19 @@ def main(
         name, _, value = extra_var.partition("=")
         state[name] = value
 
-    def bot(problem, history, system_design, tools):
+    context = Bunch(
+        tool_classes=tool_classes,
+        state=state,
+        tools_files=tools_files,
+        tools=tools,
+        system_design=system_design,
+        model=model,
+        inventory=inventory,
+        modules=modules,
+        extra_vars=extra_vars,
+        python=python,
+        explain=explain,
+        playbook=playbook,
+    )
 
-        generate_python_header(
-            python,
-            system_design,
-            problem,
-            tools_files,
-            tools,
-            inventory,
-            modules,
-            extra_vars,
-        )
-        generate_explain_header(explain, system_design, problem)
-        generate_playbook_header(playbook, system_design, problem)
-        python_output = ""
-        playbook_output = ""
-
-        def update_code():
-            nonlocal python_output, playbook_output
-            with open(python) as f:
-                python_output = f.read()
-            with open(playbook) as f:
-                playbook_output = f.read()
-
-        update_code()
-
-        response = f"System design: {system_design}\n Problem: {problem}.\n"
-        for i in range(len(response)):
-            time.sleep(0.00)
-            yield response[:i], python_output, playbook_output
-
-        tools.append("complete")
-
-        f = io.StringIO()
-        with redirect_stdout(f):
-            gen = run_agent(
-                tools=[get_tool(tool_classes, t, state) for t in tools],
-                model=model,
-                problem_statement=SOLVE_PROBLEM.format(
-                    problem=problem, system_design=system_design
-                ),
-            )
-        output = f.getvalue()
-        yield response + output, python_output, playbook_output
-
-        response = response + output
-        try:
-            while True:
-                f = io.StringIO()
-                with redirect_stdout(f):
-                    o = next(gen)
-                    if isinstance(o, ActionStep):
-                        generate_explain_action_step(explain, o)
-                        if o.tool_calls:
-                            for call in o.tool_calls:
-                                generate_python_tool_call(python, call)
-                        generate_playbook_task(playbook, o)
-                    elif isinstance(o, AgentText):
-                        print(o.to_string())
-
-                output = f.getvalue()
-                for i in range(len(output)):
-                    time.sleep(0.00)
-                    yield response + output[:i], python_output, playbook_output
-                response = response + output
-        except StopIteration:
-            pass
-
-        reformat_python(python)
-        add_lookup_plugins(playbook)
-        update_code()
-        yield response + output[:i], python_output, playbook_output
-
-    with gr.Blocks() as demo:
-        python_code = gr.Code(render=False)
-        playbook_code = gr.Code(render=False)
-        with gr.Row():
-            with gr.Column():
-                gr.Markdown("<center><h1></h1></center>")
-                gr.ChatInterface(
-                    bot,
-                    type="messages",
-                    additional_inputs=[
-                        gr.Textbox(system_design, label="System Design"),
-                        gr.CheckboxGroup(choices=sorted(tool_classes), label="Tools"),
-                    ],
-                    # additional_inputs_accordion=gr.Accordion(visible=True),
-                    additional_outputs=[python_code, playbook_code],
-                )
-            with gr.Column():
-                python_code.render()
-                playbook_code.render()
-
-    demo.launch()
-
-
-if __name__ == "__main__":
-    main()
+    launch(context, tool_classes, system_design)
