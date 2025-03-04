@@ -1,6 +1,6 @@
 [project]
 name = "ftl-agent"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
     "smolagents[litellm]==1.9.2",
     "faster_than_light",
