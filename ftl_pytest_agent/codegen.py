@@ -1,40 +1,58 @@
 import os
+import types
+
+import importlib
+
+
+def get_functions(code_file):
+
+    # Load module from file path
+    if not code_file.endswith(".py"):
+        raise Exception('Expects a python file')
+    module_name = os.path.basename(code_file[:-3])
+    spec = importlib.util.spec_from_file_location(module_name, code_file)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    fns = []
+
+    # Find and instantiate the Tool class
+    for item_name in dir(module):
+        item = getattr(module, item_name)
+        if isinstance(item, types.FunctionType):
+            fns.append(item.__name__)
+
+    return module.__name__, fns
 
 
 def generate_python_header(
-    output, problem, tools_files, code_files, tools,
+    output,
+    problem,
+    tools_files,
+    code_files,
+    tools,
 ):
 
     with open(output, "w") as f:
         f.write("#!/usr/bin/env python3\n")
         if problem:
             f.write('"""\n')
-            f.write(f'Problem:{problem}\n')
+            f.write(f"Problem:{problem}\n")
             f.write('"""\n')
-        f.write("import ftl_pytest_agent\n")
-        f.write("import pytest\n\n\n")
-        f.write("with ftl_pytest_agent.fixtures(\n")
-        f.write(f"tools_files={tools_files},\n")
-        f.write(f"code_files={code_files},\n")
-        f.write(f"tools={tools},\n")
-        f.write(") as ftl:\n\n")
 
-        for t in tools:
-            if t == "complete":
-                f.write("""
-      @pytest.fixture
-      def complete():
-          def task_completed(message: str=None):
-              print(message)
+        for code_file in code_files:
+            module_name, fns = get_functions(code_file)
+            fns = ", ".join(fns)
+            f.write(f"from {module_name} import {fns}")
 
-          return task_completed\n""")
-            else:
-                f.write(f"""
-      @pytest.fixture
-      def {t}():
-          return ftl.tools.{t}\n""")
+            f.write(
+                """
+def complete(message: str=None):
+  print(message)\n"""
+            )
 
-        f.write('\n\ndef test(' + ", ".join(tools) + "):\n")
+        f.write("\n\ndef test():\n")
+
 
 def generate_python_tool_call(output, call):
     with open(output, "a") as f:
