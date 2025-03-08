@@ -21,7 +21,7 @@ from smolagents.agent_types import AgentText
 @click.option("--problem", "-p", prompt="What is the problem?")
 @click.option("--model", "-m", default="ollama_chat/deepseek-r1:14b")
 @click.option("--output", "-o", default="output.py")
-@click.option("--explain", "-o", default="output.txt")
+@click.option("--explain", "-e", default="output.txt")
 def main(
     code_files,
     tools_files,
