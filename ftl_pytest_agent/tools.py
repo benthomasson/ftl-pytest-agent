@@ -209,12 +209,17 @@ def load_tools(tools_file):
         item = getattr(module, item_name)
         if isinstance(item, type) and issubclass(item, Tool) and item != Tool:
             tool_classes[item.name] = item
+        if isinstance(item, Tool):
+            tool_classes[item.name] = item
 
     return tool_classes
 
 
 def get_tool(tools, name, *args, **kwargs):
     if name in tools:
-        return tools[name](*args, **kwargs)
+        if isinstance(tools[name], type):
+            return tools[name](*args, **kwargs)
+        else:
+            return tools[name]
     else:
         raise Exception(f"Tool not found: {name} not in {', '.join(tools.keys())}")

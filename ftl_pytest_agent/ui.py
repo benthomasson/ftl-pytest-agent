@@ -101,6 +101,7 @@ def main(
     tool_classes.update(TOOLS)
     for tf in tools_files:
         tool_classes.update(load_tools(tf))
+    print(f"{tool_classes=}")
     model = create_model(model)
     state = {
     }

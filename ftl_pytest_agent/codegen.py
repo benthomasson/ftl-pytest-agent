@@ -9,8 +9,9 @@ def generate_python_header(
     with open(output, "w") as f:
         f.write("#!/usr/bin/env python3\n")
         if problem:
+            f.write('"""\n')
             f.write(f'Problem:{problem}\n')
-        f.write('"""\n')
+            f.write('"""\n')
         f.write("import ftl_pytest_agent\n")
         f.write("import os\n\n\n")
         f.write("with ftl_pytest_agent.automation(\n")
