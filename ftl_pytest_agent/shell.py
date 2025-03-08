@@ -16,7 +16,7 @@ from .codegen import (
     generate_playbook_task,
 )
 import faster_than_light as ftl
-from ftl_agent.memory import ActionStep
+from ftl_pytest_agent.memory import ActionStep
 from smolagents.agent_types import AgentText
 
 
