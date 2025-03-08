@@ -2,7 +2,7 @@ import click
 
 from .core import create_model, make_agent
 from .default_tools import TOOLS
-from .tools import get_tool, load_tools
+from .tools import get_tool, load_tools, load_code
 import gradio as gr
 from functools import partial
 
@@ -25,6 +25,7 @@ def bot(context, prompt, messages, tools):
         context.python,
         prompt,
         context.tools_files,
+        context.code_files,
         tools,
     )
     generate_explain_header(context.explain, prompt)
@@ -84,12 +85,14 @@ def launch(context, tool_classes, **kwargs):
 
 
 @click.command()
+@click.option("--code-files", "-c", multiple=True)
 @click.option("--tools-files", "-f", multiple=True)
 @click.option("--tools", "-t", multiple=True)
 @click.option("--model", "-m", default="ollama_chat/deepseek-r1:14b")
 @click.option("--python", "-o", default="output.py")
 @click.option("--explain", "-o", default="output.txt")
 def main(
+    code_files,
     tools_files,
     tools,
     model,
@@ -101,6 +104,8 @@ def main(
     tool_classes.update(TOOLS)
     for tf in tools_files:
         tool_classes.update(load_tools(tf))
+    for cf in code_files:
+        tool_classes.update(load_code(cf))
     print(f"{tool_classes=}")
     model = create_model(model)
     state = {
@@ -109,6 +114,7 @@ def main(
     context = Bunch(
         tool_classes=tool_classes,
         tools_files=tools_files,
+        code_files=code_files,
         tools=tools,
         model=model,
         python=python,

@@ -1,4 +1,4 @@
-from smolagents.tools import Tool
+from smolagents.tools import Tool, tool
 from smolagents._function_type_hints_utils import (
     _parse_google_format_docstring,
     DocstringParsingException,
@@ -7,6 +7,7 @@ from smolagents._function_type_hints_utils import (
     TypeHintParsingException,
 )
 from typing import Callable, Dict
+import types
 import inspect
 import importlib
 
@@ -194,7 +195,6 @@ def get_json_schema(func: Callable) -> Dict:
         return_dict.get("description", "") or "null",
     )
 
-
 def load_tools(tools_file):
 
     # Load module from file path
@@ -211,6 +211,25 @@ def load_tools(tools_file):
             tool_classes[item.name] = item
         if isinstance(item, Tool):
             tool_classes[item.name] = item
+
+    return tool_classes
+
+
+def load_code(code_file):
+
+    # Load module from file path
+    spec = importlib.util.spec_from_file_location("tools", code_file)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    print('module')
+
+    tool_classes = {}
+
+    # Find and instantiate the Tool class
+    for item_name in dir(module):
+        item = getattr(module, item_name)
+        if isinstance(item, types.FunctionType):
+            tool_classes[item.__name__] = tool(item)
 
     return tool_classes
 

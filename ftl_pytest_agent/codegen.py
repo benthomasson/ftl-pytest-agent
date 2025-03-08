@@ -1,9 +1,8 @@
 import os
-import yaml
 
 
 def generate_python_header(
-    output, problem, tools_files, tools,
+    output, problem, tools_files, code_files, tools,
 ):
 
     with open(output, "w") as f:
@@ -13,17 +12,29 @@ def generate_python_header(
             f.write(f'Problem:{problem}\n')
             f.write('"""\n')
         f.write("import ftl_pytest_agent\n")
-        f.write("import os\n\n\n")
-        f.write("with ftl_pytest_agent.automation(\n")
+        f.write("import pytest\n\n\n")
+        f.write("with ftl_pytest_agent.fixtures(\n")
         f.write(f"tools_files={tools_files},\n")
+        f.write(f"code_files={code_files},\n")
         f.write(f"tools={tools},\n")
         f.write(") as ftl:\n\n")
 
         for t in tools:
-            f.write(f"    {t} = ftl.tools.{t}\n")
+            if t == "complete":
+                f.write("""
+      @pytest.fixture
+      def complete():
+          def task_completed(message: str=None):
+              print(message)
 
-        f.write("\n")
+          return task_completed\n""")
+            else:
+                f.write(f"""
+      @pytest.fixture
+      def {t}():
+          return ftl.tools.{t}\n""")
 
+        f.write('\n\ndef test(' + ", ".join(tools) + "):\n")
 
 def generate_python_tool_call(output, call):
     with open(output, "a") as f:

@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 
 from smolagents.tools import Tool
-from .tools import load_tools, get_tool
+from .tools import load_tools, get_tool, load_code
 from .default_tools import TOOLS
 from dataclasses import dataclass
 from ftl_pytest_agent.local_python_executor import FinalAnswerException
@@ -18,7 +18,7 @@ class FTL:
 
 
 @contextmanager
-def automation(tools_files, tools, **kwargs):
+def fixtures(tools_files, code_files, tools, **kwargs):
     tool_classes = {}
     tool_classes.update(TOOLS)
     state = {
@@ -26,6 +26,8 @@ def automation(tools_files, tools, **kwargs):
     state.update(kwargs)
     for tf in tools_files:
         tool_classes.update(load_tools(tf))
+    for cf in code_files:
+        tool_classes.update(load_code(cf))
     ftl = FTL(
         tools=Tools({name: get_tool(tool_classes, name, state) for name in tools})
     )
