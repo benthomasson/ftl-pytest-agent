@@ -25,7 +25,6 @@ import re
 from .codegen import (
     generate_python_tool_call,
     generate_explain_action_step,
-    generate_playbook_task,
 )
 from typing import Optional
 
@@ -195,7 +194,6 @@ def stream_to_gradio(
             if step_log.tool_calls:
                 for call in step_log.tool_calls:
                     generate_python_tool_call(context.python, call)
-            generate_playbook_task(context.playbook, step_log)
         # Track tokens if model provides them
         if hasattr(agent.model, "last_input_token_count"):
             total_input_tokens += agent.model.last_input_token_count
