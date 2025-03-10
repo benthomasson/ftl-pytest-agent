@@ -6,6 +6,8 @@ dependencies = [
     "faster_than_light",
     "gradio",
     "black",
+    "pytest",
+    "coverage",
 ]
 
 [tool.setuptools]
@@ -18,7 +20,7 @@ build-backend = "setuptools.build_meta"
 [project.scripts]
 ftl-pytest-agent = "ftl_pytest_agent.cli:main"
 ftl-pytest-agent-ui = "ftl_pytest_agent.ui:main"
-ftl-pytest-agent-shell = "ftl_pytest_agent.shell:main"
+ftl-pytest-agent2 = "ftl_pytest_agent.cli2:main"
 
 [tool.setuptools.package-data]
 "ftl_pytest_agent.prompts" = ["*.yaml"]

@@ -1087,7 +1087,7 @@ class ToolCallingAgent(MultiStepAgent):
             )
             memory_step.model_output_message = model_message
             if model_message.tool_calls is None or len(model_message.tool_calls) == 0:
-                raise Exception("Model did not call any tools. Call `final_answer` tool to return a final answer.")
+                raise Exception("Model did not call any tools. Call `complete` tool to finish the task.")
             tool_call = model_message.tool_calls[0]
             tool_name, tool_call_id = tool_call.function.name, tool_call.id
             tool_arguments = tool_call.function.arguments
