@@ -17,7 +17,9 @@ from ftl_pytest_agent.memory import ActionStep
 from smolagents.agent_types import AgentText
 
 
-def generate_test(model, code_files, tools, prompt, output, explain):
+def generate_test(model, code_file, tools, prompt, output, explain):
+
+    code_files = [code_file]
 
     tool_classes = {}
     tool_classes.update(TOOLS)
@@ -62,11 +64,12 @@ def main(model, code_file):
 
     for fn in fns:
         fn_name = fn.__name__
+        fn_doc = fn.__doc__
         tools = ['complete', fn_name]
-        prompt = f"Call {fn_name} with suitable arguments, use assert statement on the result to make sure it is correct, and then complete."
+        prompt = f"Call {fn_name} with suitable arguments, use assert statement on the result to make sure it is correct, and then complete.  Consider the docstring for {fn_name} in your work:\n{fn_doc}\n"
         output = f"test_{fn_name}.py"
         explain = f"test_{fn_name}.txt"
-        generate_test(model, [code_file], tools, prompt, output, explain)
+        generate_test(model, code_file, tools, prompt, output, explain)
 
 
 if __name__ == "__main__":
