@@ -1,7 +1,5 @@
-from smolagents.tools import Tool, tool
+from ftl_pytest_agent.vendored_tools import Tool, tool
 from smolagents._function_type_hints_utils import (
-    _parse_google_format_docstring,
-    DocstringParsingException,
     get_type_hints,
     _parse_type_hint,
     TypeHintParsingException,
@@ -10,6 +8,11 @@ from typing import Callable, Dict
 import types
 import inspect
 import importlib
+
+from ftl_pytest_agent._function_type_hints_utils import (
+    _parse_google_format_docstring,
+    DocstringParsingException,
+)
 
 import re
 import json

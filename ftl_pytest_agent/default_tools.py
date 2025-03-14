@@ -1,4 +1,4 @@
-from smolagents.tools import Tool
+from ftl_pytest_agent.vendored_tools import Tool
 from ftl_pytest_agent.tools import get_json_schema
 from ftl_pytest_agent.local_python_executor import FinalAnswerException
 

@@ -60,7 +60,7 @@ from smolagents.monitoring import (
     LogLevel,
     Monitor,
 )
-from smolagents.tools import Tool
+from ftl_pytest_agent.vendored_tools import Tool
 from smolagents.utils import (
     AgentError,
     AgentExecutionError,
