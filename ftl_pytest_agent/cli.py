@@ -22,6 +22,7 @@ from smolagents.agent_types import AgentText
 @click.option("--model", "-m", default="ollama_chat/deepseek-r1:14b")
 @click.option("--output", "-o", default="output.py")
 @click.option("--explain", "-e", default="output.txt")
+@click.option("--llm-api-base", default=None)
 def main(
     code_files,
     tools_files,
@@ -30,6 +31,7 @@ def main(
     model,
     output,
     explain,
+    llm_api_base,
 ):
     """A agent that solves a problem given a system design and a set of tools"""
 
@@ -39,7 +41,7 @@ def main(
         tool_classes.update(load_tools(tf))
     for cf in code_files:
         tool_classes.update(load_code(cf))
-    model = create_model(model)
+    model = create_model(model, llm_api_base=llm_api_base or os.environ.get('LLM_API_BASE'))
     state = {
     }
 
