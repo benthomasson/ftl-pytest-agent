@@ -12,7 +12,8 @@ from .testgen import generate_test
 @click.option("--model", "-m", default="ollama_chat/deepseek-r1:14b")
 @click.option("--function", "-f", default=None)
 @click.option("--additional-info", "-a", default=None)
-def main(model, code_file, function, additional_info):
+@click.option("--llm-api-base", default=None)
+def main(model, code_file, function, additional_info, llm_api_base):
     print(code_file)
     module, fns = get_functions(code_file)
     print(module.__name__, [fn.__name__ for fn in fns])
@@ -29,7 +30,7 @@ def main(model, code_file, function, additional_info):
                     prompt += f.read()
             output = f"test_{fn_name}.py"
             explain = f"test_{fn_name}.txt"
-            generate_test(model, code_file, tools, prompt, output, explain)
+            generate_test(model, code_file, tools, prompt, output, explain, llm_api_base)
 
 
 if __name__ == "__main__":

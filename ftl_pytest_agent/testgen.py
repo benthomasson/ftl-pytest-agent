@@ -1,4 +1,5 @@
 
+import os
 from ftl_pytest_agent.core import create_model, run_agent
 from ftl_pytest_agent.default_tools import TOOLS
 from ftl_pytest_agent.tools import get_tool, load_code
@@ -13,7 +14,7 @@ from ftl_pytest_agent.memory import ActionStep
 from smolagents.agent_types import AgentText
 
 
-def generate_test(model, code_file, tools, prompt, output, explain):
+def generate_test(model, code_file, tools, prompt, output, explain, llm_api_base):
 
     code_files = [code_file]
 
@@ -21,7 +22,7 @@ def generate_test(model, code_file, tools, prompt, output, explain):
     tool_classes.update(TOOLS)
     for cf in code_files:
         tool_classes.update(load_code(cf))
-    model = create_model(model)
+    model = create_model(model, llm_api_base=llm_api_base or os.environ.get('LLM_API_BASE'))
     state = {
     }
 
